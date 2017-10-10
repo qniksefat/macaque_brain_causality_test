@@ -4,6 +4,69 @@
 We provide two electrophysiological datasets recorded via a 10-by-10 multi-electrode array chronically implanted in the motor cortex of two macaque monkeys during an instructed delayed reach-to-grasp task. The datasets contain the continuous measure of extracellular potentials at each electrode sampled at 30 kHz, the local field potentials sampled at 1 kHz and the timing of the online and offline extracted spike times. It also includes the timing of several task-related and behavioral events recorded along with the electrophysiological data. Finally, the datasets provide a complete set of metadata structured in a standardized format. These metadata allow easy access to detailed information about the datasets such as the settings of the recording hardware, the array specifications, the location of the implant in the motor cortex, information about the monkeys, or the offline spike sorting.
 The two datasets can be exploited to address crucial issues in neurophysiology such as: What are the principles of neural interactions in a local cortical network and how are these interactions modulated during a well-described behavioral task?  How different neuronal signals such as single-unit activity, multi-unit activity or LFPs relate to each other? Which spike sorting methods provide the best estimate of single unit activity?  
 
+## Downloading the data
+
+### Using gin
+
+Create an account on gin and download the *gin* client as described [here](https://web.gin.g-node.org/G-Node/Info/wiki/gin-cli). On your computer, log in using
+```bash
+gin login
+```
+
+Clone the repository using:
+```bash
+gin get INT/multielectrode_grasp
+```
+
+Large data files will not be downloaded automatically. To get them, use
+```bash
+gin get-content <filename>
+```
+
+Downloaded large files will be locked (read-only). You must unlock the files using
+```bash
+gin unlock <filename>
+```
+
+To remove the contents of a large file again, use
+```bash
+gin lock <filename>
+gin remove-content <filename>
+```
+
+See [here](https://web.gin.g-node.org/G-Node/Info/wiki/gin-cli+tutorial) for detailed information on how to use *gin*.
+
+
+### Using git annex
+
+Make sure git and git-annex are installed on your computer. Create an account on gin and upload your public SSH key to your gin profile. Then clone the repository using
+```bash
+git clone git@gin.g-node.org:/INT/multielectrode_grasp.git
+```
+
+Large data files will not be downloaded automatically. To get them, use
+```bash
+git annex get <filename>
+```
+
+Downloaded large files will be locked (read-only). You must unlock the files using
+```bash
+git annex unlock <filename>
+```
+
+To remove the contents of a large file again, use
+```bash
+git annex --force lock <filename>
+git annex drop <filename>
+```
+
+See the *git annex* documentation for details.
+
+
+### Using the web browser
+
+Download the latest release as a zip file by clicking on *Releases* on the main page at https://web.gin.g-node.org/INM6/multielectrode_grasp. This zip file will contain all small (text) files only. Next, download large files individually as needed from the web interface by clicking on them in the repository browser.
+
 ## Repository structure
 
 ### Directory datasets
