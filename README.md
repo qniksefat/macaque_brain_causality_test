@@ -65,7 +65,7 @@ See the *git annex* documentation for details.
 
 ### Using the web browser
 
-Download the latest release as a zip file by clicking on *Releases* on the main page at https://web.gin.g-node.org/INM6/multielectrode_grasp. This zip file will contain all small (text) files only. Next, download large files individually as needed from the web interface by clicking on them in the repository browser.
+Download the latest release as a zip file by clicking on *Releases* on the main page at https://web.gin.g-node.org/INM6/multielectrode_grasp. This zip file will contain all small (text) files only, while large data files will not be downloaded automatically and an empty placeholder will be put in their place. To get the full content of such a large file , download these files individually as needed from the web interface by clicking on them in the repository browser.
 
 ## Repository structure
 
