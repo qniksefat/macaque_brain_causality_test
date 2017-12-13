@@ -125,8 +125,8 @@ def get_arraygrid(blackrock_elid_list, chosen_el, rej_el=None):
 # Load data and metadata for a monkey
 # =============================================================================
 # CHANGE this parameter to load data of the different monkeys
-# monkey = 'Lilou'
-monkey = 'Nikos2'
+# monkey = 'Nikos2'
+monkey = 'Lilou'
 
 nsx_none = {'Lilou': None, 'Nikos2': None}
 nsx_lfp = {'Lilou': 2, 'Nikos2': 2}
@@ -355,6 +355,9 @@ trialz_trid = trids[trtimeids.index(trialz_trtimeid)]
 # get all trial ids for grip error trials
 trids_pc191 = odml_utils.get_trialids_pc(odmldoc, 191)
 
+# get all trial ids for correct trials
+trids_pc255 = odml_utils.get_trialids_pc(odmldoc, 255)
+
 # get occurring trial types
 octrty = odml_utils.get_OccurringTrialTypes(odmldoc, code=False)
 
@@ -371,12 +374,17 @@ for tt in octrty:
         color = trialtype_colors[tt]
 
     B = ax1.bar(
-        left=left, height=height, width=width, color=color, linewidth=0.01)
+        left=left, height=height, width=width, color=color, linewidth=0.001)
 
     # Mark trials of current trial type (left) if a grip error occurred
-    x = [i + width / 2. for i in list(set(left) & set(trids_pc191))]
+    x = [i for i in list(set(left) & set(trids_pc191))]
     y = np.ones_like(x) * 2.0
-    ax1.scatter(x, y, s=5, marker='*')
+    ax1.scatter(x, y, s=5, color='r', marker='*')
+    # Mark trials of current trial type (left) if any other error occurred
+    x = [i for i in list(
+        set(left) - set(trids_pc255) - set(trids_pc191))]
+    y = np.ones_like(x) * 2.0
+    ax1.scatter(x, y, s=5, color='k', marker='*')
 
     # Collect information for trial type legend
     if tt not in ['PG', 'SG', 'LF', 'HF']:
@@ -386,17 +394,17 @@ for tt in octrty:
             labels.append('total: # %i' % trno_tot)
             # add another box and label for error numbers
             boxes.append(B[0])
-            labels.append('/ * errors: # %i' % trno_ertr)
+            labels.append('* errors: # %i' % trno_ertr)
         else:
             # trial type trial numbers
             labels.append(tt + ': # %i' % len(left))
 
 # mark chosen trial
-x = [trialx_trid + width / 2.]
+x = [trialx_trid]
 y = np.ones_like(x) * 2.0
 ax1.scatter(x, y, s=5, marker='D', color='Red', edgecolors='Red')
 # mark next trial with opposite force
-x = [trialz_trid + width / 2.]
+x = [trialz_trid]
 y = np.ones_like(x) * 2.0
 ax1.scatter(x, y, s=5, marker='D', color='orange', edgecolors='orange')
 
@@ -409,11 +417,11 @@ leg = ax1.legend(
 leg.draw_frame(False)
 
 # adjust x and y axis
-xticks = [i + 0.5 for i in range(1, 101, 10)] + [100.5]
+xticks = [i for i in range(1, 101, 10)] + [100]
 ax1.set_xticks(xticks)
 ax1.set_xticklabels([str(int(t)) for t in xticks], size='xx-small')
 ax1.set_xlabel('trial ID', size='x-small')
-ax1.set_xlim(1, 101)
+ax1.set_xlim(1.-width/2., 100.+width/2.)
 ax1.yaxis.set_visible(False)
 ax1.set_ylim(0, 3)
 ax1.spines['top'].set_visible(False)
@@ -624,6 +632,8 @@ fplon_trz = eventz[startidx].rescale(plotting_time_unit)
 fploff_trz = eventz[stopidx].rescale(plotting_time_unit)
 
 # plotting grip force and object displacement
+ai_legend = []
+ai_legend_txt = []
 for ainp in ainp_signals:
     if ainp.annotations['channel_id'] in trialx_chids:
         ainp_times = ainp.times.rescale(plotting_time_unit)
@@ -632,9 +642,12 @@ for ainp in ainp_signals:
 
         if ainp.annotations['channel_id'] != 143:
             color = 'gray'
+            ai_legend_txt.append('grip force')
         else:
             color = 'k'
-        ax5a.plot(ainp_times[mask], ainp_ampli, color=color)
+            ai_legend_txt.append('object disp.')
+        ai_legend.append(
+            ax5a.plot(ainp_times[mask], ainp_ampli, color=color)[0])
 
     # get force load of this trial for next plot
     elif ainp.annotations['channel_id'] == 141:
@@ -648,6 +661,11 @@ ax5a.yaxis.set_label_position("left")
 ax5a.tick_params(direction='in', length=3, labelsize='xx-small',
                  labelleft='off', labelright='on')
 ax5a.set_ylabel('zscore', fontdict_axis)
+ax5a.legend(
+    ai_legend, ai_legend_txt,
+    bbox_to_anchor=(0.65, .85, 0.25, 0.1), loc=2, handlelength=1.1,
+    ncol=len(labels), borderaxespad=0., handletextpad=0.4,
+    prop={'size': 'xx-small'})
 
 # plotting load/pull force of LF and HF trial
 force_times = ainp_trialz.times.rescale(plotting_time_unit)
@@ -660,7 +678,7 @@ ax5b.bar([0, 0.6], [force_av_01, force_av_02], bar_width, color=color)
 
 ax5b.set_title('load/pull force', fontdict_titles)
 ax5b.set_ylabel(behav_signal_unit.units.dimensionality.latex, fontdict_axis)
-ax5b.set_xticks([0.2, 0.8])
+ax5b.set_xticks([0, 0.6])
 ax5b.set_xticklabels([trialx_trty, trialz_trty], fontdict_axis)
 ax5b.yaxis.set_label_position("right")
 ax5b.tick_params(direction='in', length=3, labelsize='xx-small',

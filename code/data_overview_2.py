@@ -81,8 +81,9 @@ chosen_events = ['TS-ON', 'WS-ON', 'CUE-ON', 'CUE-OFF', 'GO-ON', 'SR-ON',
 # =============================================================================
 # Load data and metadata for a monkey
 # =============================================================================
-monkey = 'Lilou'
+# CHANGE this parameter to load data of the different monkeys
 # monkey = 'Nikos2'
+monkey = 'Lilou'
 
 datafile = get_monkey_datafile(monkey)
 
@@ -338,7 +339,8 @@ for trial_idx, trial_id in enumerate(trial_indexes):
 ax2.set_title('single electrode', fontdict=fontdict_titles)
 ax2.set_ylabel('trial id', fontdict=fontdict_axis)
 ax2.set_yticks(np.asarray(trial_indexes) * anasig_offset)
-ax2.set_yticklabels(np.asarray(trial_indexes) + 1)
+ax2.set_yticklabels(
+    [epochs[0].annotations['trial_id'][_] for _ in trial_indexes])
 ax2.yaxis.set_label_position("right")
 ax2.tick_params(direction='in', length=3, labelleft='off', labelright='on')
 ax2.autoscale(enable=True, axis='y')
@@ -352,7 +354,8 @@ start, end = ax4.get_xlim()
 ax4.xaxis.set_ticks(np.arange(start, end, 1000))
 ax4.xaxis.set_ticks(np.arange(start, end, 500), minor=True)
 ax4.set_yticks(range(1, len(trial_indexes) + 1))
-ax4.set_yticklabels(np.asarray(trial_indexes) + 1)
+ax4.set_yticklabels(np.asarray(
+    [epochs[0].annotations['trial_id'][_] for _ in trial_indexes]))
 ax4.yaxis.set_label_position("right")
 ax4.tick_params(direction='in', length=3, labelleft='off', labelright='on')
 ax4.autoscale(enable=True, axis='y')
