@@ -1,1 +1,5 @@
-Please see the LICENSE.txt files in individual subdirectories for respetive licenses of code and data.
+Massively parallel multi-electrode recordings of macaque motor cortex during an instructed delayed reach-to-grasp task in the directories datasets and datasets_matlab by Institut de Neurosciences de la Timone (INT), UMR 7289, CNRS – Aix Marseille Université, Marseille, France and Institute of Neuroscience and Medicine (INM-6), Forschungszentrum Jülich, Jülich, Germany is licensed under a Creative Commons Attribution 4.0 International License.
+
+All code in the directories code, code/python-odml, code/python-neo, code/elephant, and code/reachgraspio are each published under the BSD 3 clause licenses.
+
+Please see the LICENSE.txt or LICENSE files in individual subdirectories for detailed respective licenses of code and data.
