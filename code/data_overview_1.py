@@ -379,12 +379,12 @@ for tt in octrty:
     # Mark trials of current trial type (left) if a grip error occurred
     x = [i for i in list(set(left) & set(trids_pc191))]
     y = np.ones_like(x) * 2.0
-    ax1.scatter(x, y, s=5, color='r', marker='*')
+    ax1.scatter(x, y, s=5, color='k', marker='*')
     # Mark trials of current trial type (left) if any other error occurred
     x = [i for i in list(
         set(left) - set(trids_pc255) - set(trids_pc191))]
     y = np.ones_like(x) * 2.0
-    ax1.scatter(x, y, s=5, color='k', marker='*')
+    ax1.scatter(x, y, s=5, color='gray', marker='*')
 
     # Collect information for trial type legend
     if tt not in ['PG', 'SG', 'LF', 'HF']:
