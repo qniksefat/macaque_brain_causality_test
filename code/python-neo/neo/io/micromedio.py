@@ -14,12 +14,7 @@ import datetime
 import os
 import struct
 
-# file no longer exists in Python3
-try:
-    file
-except NameError:
-    import io
-    file = io.BufferedReader
+from io import open, BufferedReader
 
 import numpy as np
 import quantities as pq
@@ -28,7 +23,7 @@ from neo.io.baseio import BaseIO
 from neo.core import Segment, AnalogSignal, Epoch, Event
 
 
-class StructFile(file):
+class StructFile(BufferedReader):
     def read_f(self, fmt):
         return struct.unpack(fmt, self.read(struct.calcsize(fmt)))
 
@@ -76,16 +71,16 @@ class MicromedIO(BaseIO):
         """
         Arguments:
         """
-        f = StructFile(self.filename, 'rb')
+        f = StructFile(open(self.filename, 'rb'))
 
         # Name
         f.seek(64, 0)
-        surname = f.read(22)
+        surname = f.read(22).decode('ascii')
         while surname[-1] == ' ':
             if len(surname) == 0:
                 break
             surname = surname[:-1]
-        firstname = f.read(20)
+        firstname = f.read(20).decode('ascii')
         while firstname[-1] == ' ':
             if len(firstname) == 0:
                 break
@@ -107,13 +102,14 @@ class MicromedIO(BaseIO):
         header_version, = f.read_f('b')
         assert header_version == 4
 
-        seg = Segment(name=firstname + ' ' + surname,
+        seg = Segment(name=str(firstname + ' ' + surname),
                       file_origin=os.path.basename(self.filename))
         seg.annotate(surname=surname)
         seg.annotate(firstname=firstname)
         seg.annotate(rec_datetime=rec_datetime)
 
         if not cascade:
+            f.close()
             return seg
 
         # area
@@ -132,12 +128,12 @@ class MicromedIO(BaseIO):
         if not lazy:
             f.seek(Data_Start_Offset, 0)
             rawdata = np.fromstring(f.read(), dtype='u' + str(Bytes))
-            rawdata = rawdata.reshape((rawdata.size / Num_Chan, Num_Chan))
+            rawdata = rawdata.reshape((-1, Num_Chan))
 
         # Reading Code Info
         zname2, pos, length = zones['ORDER']
         f.seek(pos, 0)
-        code = np.fromfile(f, dtype='u2', count=Num_Chan)
+        code = np.fromstring(f.read(Num_Chan*2), dtype='u2', count=Num_Chan)
 
         units = {-1: pq.nano * pq.V, 0: pq.uV, 1: pq.mV, 2: 1, 100: pq.percent,
                  101: pq.dimensionless, 102: pq.dimensionless}
@@ -146,8 +142,8 @@ class MicromedIO(BaseIO):
             zname2, pos, length = zones['LABCOD']
             f.seek(pos + code[c] * 128 + 2, 0)
 
-            label = f.read(6).strip("\x00")
-            ground = f.read(6).strip("\x00")
+            label = f.read(6).strip(b"\x00").decode('ascii')
+            ground = f.read(6).strip(b"\x00").decode('ascii')
             (logical_min, logical_max, logical_ground, physical_min,
              physical_max) = f.read_f('iiiii')
             k, = f.read_f('h')
@@ -169,7 +165,7 @@ class MicromedIO(BaseIO):
                     'f') - logical_ground) * factor * unit
 
             ana_sig = AnalogSignal(signal, sampling_rate=sampling_rate,
-                                   name=label, channel_index=c)
+                                   name=str(label), channel_index=c)
             if lazy:
                 ana_sig.lazy_shape = None
             ana_sig.annotate(ground=ground)
@@ -222,4 +218,5 @@ class MicromedIO(BaseIO):
             seg.epochs.append(ep)
 
         seg.create_many_to_one_relationship()
+        f.close()
         return seg

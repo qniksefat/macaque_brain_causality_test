@@ -2,8 +2,8 @@
 '''
 This module implements :class:`AnalogSignal`, an array of analog signals.
 
-:class:`AnalogSignal` inherits from :class:`quantites.Quantity`, which
-inherits from :class:`numpy.array`.
+:class:`AnalogSignal` inherits from :class:`basesignal.BaseSignal` and 
+:class:`quantities.Quantity`, which inherits from :class:`numpy.array`.
 Inheritance from :class:`numpy.array` is explained here:
 http://docs.scipy.org/doc/numpy/user/basics.subclassing.html
 
@@ -26,8 +26,11 @@ import quantities as pq
 
 from neo.core.baseneo import BaseNeo, MergeError, merge_annotations
 from neo.core.channelindex import ChannelIndex
+from copy import copy, deepcopy
 
 logger = logging.getLogger("Neo")
+
+from neo.core import basesignal
 
 
 def _get_sampling_rate(sampling_rate, sampling_period):
@@ -67,7 +70,7 @@ def _new_AnalogSignalArray(cls, signal, units=None, dtype=None, copy=True,
     return obj
 
 
-class AnalogSignal(BaseNeo, pq.Quantity):
+class AnalogSignal(basesignal.BaseSignal):
     '''
     Array of one or more continuous analog signals.
 
@@ -227,6 +230,20 @@ class AnalogSignal(BaseNeo, pq.Quantity):
                                         self.annotations,
                                         self.channel_index,
                                         self.segment)
+    def __deepcopy__(self, memo):
+        cls = self.__class__
+        new_AS = cls(np.array(self), units=self.units, dtype=self.dtype,
+               t_start=self.t_start, sampling_rate=self.sampling_rate,
+               sampling_period=self.sampling_period, name=self.name,
+               file_origin=self.file_origin, description=self.description)
+        new_AS.__dict__.update(self.__dict__)
+        memo[id(self)] = new_AS
+        for k, v in self.__dict__.items():
+            try:
+                setattr(new_AS, k, deepcopy(v, memo))
+            except:
+                setattr(new_AS, k, v)
+        return new_AS
 
     def __array_finalize__(self, obj):
         '''
@@ -251,7 +268,7 @@ class AnalogSignal(BaseNeo, pq.Quantity):
         self.file_origin = getattr(obj, 'file_origin', None)
         self.description = getattr(obj, 'description', None)
 
-        # Parents objects
+        # Parent objects
         self.segment = getattr(obj, 'segment', None)
         self.channel_index = getattr(obj, 'channel_index', None)
 
@@ -285,11 +302,11 @@ class AnalogSignal(BaseNeo, pq.Quantity):
         Get the item or slice :attr:`i`.
         '''
         obj = super(AnalogSignal, self).__getitem__(i)
-        if isinstance(i, int):  # a single point in time across all channels
+        if isinstance(i, (int, np.integer)):  # a single point in time across all channels
             obj = pq.Quantity(obj.magnitude, units=obj.units)
         elif isinstance(i, tuple):
             j, k = i
-            if isinstance(j, int):  # extract a quantity array
+            if isinstance(j, (int, np.integer)):  # extract a quantity array
                 obj = pq.Quantity(obj.magnitude, units=obj.units)
             else:
                 if isinstance(j, slice):
@@ -303,7 +320,7 @@ class AnalogSignal(BaseNeo, pq.Quantity):
                     # in the general case, would need to return IrregularlySampledSignal(Array)
                 else:
                     raise TypeError("%s not supported" % type(j))
-                if isinstance(k, int):
+                if isinstance(k, (int, np.integer)):
                     obj = obj.reshape(-1, 1)
                 if self.channel_index:
                     obj.channel_index = self.channel_index.__getitem__(k)
@@ -437,7 +454,10 @@ class AnalogSignal(BaseNeo, pq.Quantity):
         new = self.__class__(signal=signal, units=to_u,
                              sampling_rate=self.sampling_rate)
         new._copy_data_complement(self)
+        new.channel_index = self.channel_index
+        new.segment = self.segment
         new.annotations.update(self.annotations)
+
         return new
 
     def duplicate_with_new_array(self, signal):
@@ -461,12 +481,6 @@ class AnalogSignal(BaseNeo, pq.Quantity):
             return False
         return super(AnalogSignal, self).__eq__(other)
 
-    def __ne__(self, other):
-        '''
-        Non-equality test (!=)
-        '''
-        return not self.__eq__(other)
-
     def _check_consistency(self, other):
         '''
         Check if the attributes of another :class:`AnalogSignal`
@@ -485,50 +499,6 @@ class AnalogSignal(BaseNeo, pq.Quantity):
         for attr in ("t_start", "sampling_rate", "name", "file_origin",
                      "description", "annotations"):
             setattr(self, attr, getattr(other, attr, None))
-
-    def _apply_operator(self, other, op, *args):
-        '''
-        Handle copying metadata to the new :class:`AnalogSignal`
-        after a mathematical operation.
-        '''
-        self._check_consistency(other)
-        f = getattr(super(AnalogSignal, self), op)
-        new_signal = f(other, *args)
-        new_signal._copy_data_complement(self)
-        return new_signal
-
-    def __add__(self, other, *args):
-        '''
-        Addition (+)
-        '''
-        return self._apply_operator(other, "__add__", *args)
-
-    def __sub__(self, other, *args):
-        '''
-        Subtraction (-)
-        '''
-        return self._apply_operator(other, "__sub__", *args)
-
-    def __mul__(self, other, *args):
-        '''
-        Multiplication (*)
-        '''
-        return self._apply_operator(other, "__mul__", *args)
-
-    def __truediv__(self, other, *args):
-        '''
-        Float division (/)
-        '''
-        return self._apply_operator(other, "__truediv__", *args)
-
-    def __div__(self, other, *args):
-        '''
-        Integer division (//)
-        '''
-        return self._apply_operator(other, "__div__", *args)
-
-    __radd__ = __add__
-    __rmul__ = __sub__
 
     def __rsub__(self, other, *args):
         '''
@@ -653,20 +623,3 @@ class AnalogSignal(BaseNeo, pq.Quantity):
         if hasattr(self, "lazy_shape"):
             signal.lazy_shape = merged_lazy_shape
         return signal
-
-    def as_array(self, units=None):
-        """
-        Return the signal as a plain NumPy array.
-
-        If `units` is specified, first rescale to those units.
-        """
-        if units:
-            return self.rescale(units).magnitude
-        else:
-            return self.magnitude
-
-    def as_quantity(self):
-        """
-        Return the signal as a quantities array.
-        """
-        return self.view(pq.Quantity)

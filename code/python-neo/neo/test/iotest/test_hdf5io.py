@@ -5,10 +5,7 @@ Tests of neo.io.hdf5io_new
 """
 
 
-try:
-    import unittest2 as unittest
-except ImportError:
-    import unittest
+import unittest
 import numpy as np
 from numpy.testing import assert_array_equal
 from quantities import kHz, mV, ms, second, nA
@@ -69,7 +66,7 @@ class ReadOldNeoHdf5IOTest(BaseTestIO, unittest.TestCase):
             self.assertEqual(len(segment.events), 1)
             ev = segment.events[0]
             assert_array_equal(ev.labels,
-                               np.array(['trig0', 'trig1', 'trig2']))
+                               np.array(['trig0', 'trig1', 'trig2'], dtype='|S5'))
             self.assertEqual(ev.units, second)
             assert_array_equal(ev.magnitude, np.arange(0, 30, 10))
             self.assertEqual(ev.segment, segment)
@@ -77,7 +74,7 @@ class ReadOldNeoHdf5IOTest(BaseTestIO, unittest.TestCase):
             self.assertEqual(len(segment.epochs), 1)
             ep = segment.epochs[0]
             assert_array_equal(ep.labels,
-                               np.array(['btn0', 'btn1', 'btn2']))
+                               np.array(['btn0', 'btn1', 'btn2'], dtype='|S4'))
             assert_array_equal(ep.durations.magnitude,
                                np.array([10, 5, 7]))
             self.assertEqual(ep.units, second)

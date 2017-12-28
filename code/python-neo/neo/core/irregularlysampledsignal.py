@@ -3,9 +3,9 @@
 This module implements :class:`IrregularlySampledSignal`, an array of analog
 signals with samples taken at arbitrary time points.
 
-:class:`IrregularlySampledSignal` derives from :class:`BaseNeo`, from
-:module:`neo.core.baseneo`, and from :class:`quantites.Quantity`, which
-inherits from :class:`numpy.array`.
+:class:`IrregularlySampledSignal` inherits from :class:`basesignal.BaseSignal`
+and  derives from :class:`BaseNeo`, from :module:`neo.core.baseneo`, 
+and from :class:`quantities.Quantity`, which inherits from :class:`numpy.array`.
 
 Inheritance from :class:`numpy.array` is explained here:
 http://docs.scipy.org/doc/numpy/user/basics.subclassing.html
@@ -27,6 +27,7 @@ import quantities as pq
 
 from neo.core.baseneo import BaseNeo, MergeError, merge_annotations
 
+from neo.core import basesignal
 
 def _new_IrregularlySampledSignal(cls, times, signal, units=None, time_units=None, dtype=None,
                                   copy=True, name=None, file_origin=None, description=None,
@@ -43,7 +44,7 @@ def _new_IrregularlySampledSignal(cls, times, signal, units=None, time_units=Non
     return iss
 
 
-class IrregularlySampledSignal(BaseNeo, pq.Quantity):
+class IrregularlySampledSignal(basesignal.BaseSignal):
     '''
     An array of one or more analog signals with samples taken at arbitrary time points.
 
@@ -208,6 +209,10 @@ class IrregularlySampledSignal(BaseNeo, pq.Quantity):
         self.file_origin = getattr(obj, 'file_origin', None)
         self.description = getattr(obj, 'description', None)
 
+        # Parent objects
+        self.segment = getattr(obj, 'segment', None)
+        self.channel_index = getattr(obj, 'channel_index', None)
+
     def __repr__(self):
         '''
         Returns a string representing the :class:`IrregularlySampledSignal`.
@@ -230,11 +235,11 @@ class IrregularlySampledSignal(BaseNeo, pq.Quantity):
         Get the item or slice :attr:`i`.
         '''
         obj = super(IrregularlySampledSignal, self).__getitem__(i)
-        if isinstance(i, int):  # a single point in time across all channels
+        if isinstance(i, (int, np.integer)):  # a single point in time across all channels
             obj = pq.Quantity(obj.magnitude, units=obj.units)
         elif isinstance(i, tuple):
             j, k = i
-            if isinstance(j, int):  # a single point in time across some channels
+            if isinstance(j, (int, np.integer)):  # a single point in time across some channels
                 obj = pq.Quantity(obj.magnitude, units=obj.units)
             else:
                 if isinstance(j, slice):
@@ -243,7 +248,7 @@ class IrregularlySampledSignal(BaseNeo, pq.Quantity):
                     raise NotImplementedError("Arrays not yet supported")
                 else:
                     raise TypeError("%s not supported" % type(j))
-                if isinstance(k, int):
+                if isinstance(k, (int, np.integer)):
                     obj = obj.reshape(-1, 1)
         elif isinstance(i, slice):
             obj.times = self.times.__getitem__(i)
@@ -286,23 +291,6 @@ class IrregularlySampledSignal(BaseNeo, pq.Quantity):
         return (super(IrregularlySampledSignal, self).__eq__(other).all() and
                 (self.times == other.times).all())
 
-    def __ne__(self, other):
-        '''
-        Non-equality test (!=)
-        '''
-        return not self.__eq__(other)
-
-    def _apply_operator(self, other, op, *args):
-        '''
-        Handle copying metadata to the new :class:`IrregularlySampledSignal`
-        after a mathematical operation.
-        '''
-        self._check_consistency(other)
-        f = getattr(super(IrregularlySampledSignal, self), op)
-        new_signal = f(other, *args)
-        new_signal._copy_data_complement(self)
-        return new_signal
-
     def _check_consistency(self, other):
         '''
         Check if the attributes of another :class:`IrregularlySampledSignal`
@@ -335,39 +323,6 @@ class IrregularlySampledSignal(BaseNeo, pq.Quantity):
         for attr in ("times", "name", "file_origin",
                      "description", "annotations"):
             setattr(self, attr, getattr(other, attr, None))
-
-    def __add__(self, other, *args):
-        '''
-        Addition (+)
-        '''
-        return self._apply_operator(other, "__add__", *args)
-
-    def __sub__(self, other, *args):
-        '''
-        Subtraction (-)
-        '''
-        return self._apply_operator(other, "__sub__", *args)
-
-    def __mul__(self, other, *args):
-        '''
-        Multiplication (*)
-        '''
-        return self._apply_operator(other, "__mul__", *args)
-
-    def __truediv__(self, other, *args):
-        '''
-        Float division (/)
-        '''
-        return self._apply_operator(other, "__truediv__", *args)
-
-    def __div__(self, other, *args):
-        '''
-        Integer division (//)
-        '''
-        return self._apply_operator(other, "__div__", *args)
-
-    __radd__ = __add__
-    __rmul__ = __sub__
 
     def __rsub__(self, other, *args):
         '''
@@ -456,6 +411,8 @@ class IrregularlySampledSignal(BaseNeo, pq.Quantity):
             signal = cf * self.magnitude
         new = self.__class__(times=self.times, signal=signal, units=to_u)
         new._copy_data_complement(self)
+        new.channel_index = self.channel_index
+        new.segment = self.segment
         new.annotations.update(self.annotations)
         return new
 
@@ -535,20 +492,3 @@ class IrregularlySampledSignal(BaseNeo, pq.Quantity):
         new_st = self[id_start:id_stop]
 
         return new_st
-
-    def as_array(self, units=None):
-        """
-        Return the signal as a plain NumPy array.
-
-        If `units` is specified, first rescale to those units.
-        """
-        if units:
-            return self.rescale(units).magnitude
-        else:
-            return self.magnitude
-
-    def as_quantity(self):
-        """
-        Return the signal as a quantities array.
-        """
-        return self.view(pq.Quantity)

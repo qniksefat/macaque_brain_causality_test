@@ -46,7 +46,6 @@ import quantities as pq
 
 from neo.io.baseio import BaseIO
 from neo.core import Block, Segment, AnalogSignal, Event
-from neo.io.tools import iteritems
 
 
 class StructFile(BufferedReader):
@@ -302,7 +301,7 @@ class AxonIO(BaseIO):
 
                     anaSig = AnalogSignal(signal, sampling_rate=sampling_rate,
                                           t_start=t_start,
-                                          name=name.decode("utf-8"),
+                                          name=str(name.decode("utf-8")),
                                           channel_index=int(num))
                     if lazy:
                         anaSig.lazy_shape = length / nbchannel
@@ -576,7 +575,7 @@ class AxonIO(BaseIO):
                     # Go over EpochInfoPerDAC and change the analog signal
                     # according to the epochs
                     epochInfo = header['dictEpochInfoPerDAC'][DACNum]
-                    for epochNum, epoch in iteritems(epochInfo):
+                    for epochNum, epoch in epochInfo.items():
                         i_begin = i_last
                         i_end = i_last + epoch['lEpochInitDuration'] +\
                             epoch['lEpochDurationInc'] * epiNum
@@ -585,7 +584,8 @@ class AxonIO(BaseIO):
                             pq.Quantity(1, unit) * (epoch['fEpochInitLevel'] +
                                                     epoch['fEpochLevelInc'] *
                                                     epiNum)
-                        i_last += epoch['lEpochInitDuration']
+                        i_last += epoch['lEpochInitDuration'] +\
+                            epoch['lEpochDurationInc'] * epiNum
                 seg.analogsignals.append(ana_sig)
             segments.append(seg)
 
