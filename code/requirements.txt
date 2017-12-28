@@ -3,4 +3,14 @@ quantities>=0.10.1
 scipy>=0.14.0
 six
 enum>0.4.4
-
+#
+# The following are the three packages bundled in subdirectories of
+# the code directory. 
+# Uncomment the lines below to install the packages rather than 
+# use these frozen budled packages in the code subdirectory. In addition
+# you will need to make corresponding changes to the file
+# load_local_neo_odml_elephant.py
+#
+# python-neo=0.5.2
+# elephant=0.4.1
+# odml=1.2
