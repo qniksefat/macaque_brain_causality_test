@@ -203,7 +203,7 @@ nsx_colors = ['b', 'k', 'r']
 for i, anasig in enumerate(trial_segment.analogsignals):
         plt.plot(
             anasig.times.rescale(time_unit),
-            anasig.rescale(amplitude_unit),
+            anasig.squeeze().rescale(amplitude_unit),
             label=anasig.name,
             color=nsx_colors[i])
 

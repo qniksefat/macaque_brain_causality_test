@@ -534,7 +534,7 @@ el_raw_sig = trial_seg_raw.analogsignals[0]
 
 # plotting raw signal trace
 ax4.plot(el_raw_sig.times.rescale(plotting_time_unit),
-         el_raw_sig.rescale(raw_signal_unit),
+         el_raw_sig.squeeze().rescale(raw_signal_unit),
          color='k')
 
 # setting layout of raw signal plot
