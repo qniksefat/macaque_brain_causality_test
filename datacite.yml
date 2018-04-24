@@ -86,6 +86,10 @@ funding:
 # for further valid types see https://schema.datacite.org/meta/kernel-4
 references:
   -
+    doi: "10.1038/sdata.2018.55"
+    reftype: "IsPartOf"
+    name: "Brochier, T., Zehl, L., Hao, Y., Duret, M., Sprenger, J., Denker, M., Grün, S. & Riehle, A. (2018). Massively parallel recordings in macaque motor cortex during an instructed delayed reach-to-grasp task, Scientific Data, 5, 180055."
+  -
     doi: "10.3389/fninf.2016.00026"
     reftype: "HasMetadata"
     name: "Zehl, L., Jaillet, F., Stoewer, A., Grewe, J., Sobolev, A., Wachtler, T., … Grün, S. (2016). Handling Metadata in a Neurophysiology Laboratory. Frontiers in Neuroinformatics, 10, 26."
