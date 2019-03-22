@@ -44,7 +44,7 @@ def proc_f32(filename):
              f32 file name = 'file1.f32'
     '''
 
-    filenameorig = os.path.basename(filename[:-12]+'.f32')
+    filenameorig = os.path.basename(filename[:-12] + '.f32')
 
     # create the objects to store other objects
     block = Block(file_origin=filenameorig)
@@ -59,7 +59,7 @@ def proc_f32(filename):
 
     try:
         with np.load(filename) as f32obj:
-            f32file = f32obj.items()[0][1].flatten()
+            f32file = list(f32obj.items())[0][1].flatten()
     except IOError as exc:
         if 'as a pickle' in exc.message:
             block.create_many_to_one_relationship()
