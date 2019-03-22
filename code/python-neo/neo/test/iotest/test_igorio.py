@@ -7,7 +7,6 @@ import unittest
 
 try:
     import igor
-
     HAVE_IGOR = True
 except ImportError:
     HAVE_IGOR = False

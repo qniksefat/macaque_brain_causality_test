@@ -114,19 +114,17 @@ class BrainwareDamIO(BaseIO):
         self._filename = os.path.basename(filename)
         self._fsrc = None
 
-    def read(self, lazy=False, **kargs):
+    def read(self, lazy=False, cascade=True, **kargs):
         '''
         Reads raw data file "fname" generated with BrainWare
         '''
-        assert not lazy, 'Do not support lazy'
-        return self.read_block(lazy=lazy)
+        return self.read_block(lazy=lazy, cascade=cascade)
 
-    def read_block(self, lazy=False, **kargs):
+    def read_block(self, lazy=False, cascade=True, **kargs):
         '''
         Reads a block from the raw data file "fname" generated
         with BrainWare
         '''
-        assert not lazy, 'Do not support lazy'
 
         # there are no keyargs implemented to so far.  If someone tries to pass
         # them they are expecting them to do something or making a mistake,
@@ -138,11 +136,15 @@ class BrainwareDamIO(BaseIO):
 
         block = Block(file_origin=self._filename)
 
+        # if we aren't doing cascade, don't load anything
+        if not cascade:
+            return block
+
         # create the objects to store other objects
         chx = ChannelIndex(file_origin=self._filename,
-                           channel_ids=np.array([1]),
-                           index=np.array([0]),
-                           channel_names=np.array(['Chan1'], dtype='S'))
+                                    channel_ids=np.array([1]),
+                                    index=np.array([0]),
+                                    channel_names=np.array(['Chan1'], dtype='S'))
 
         # load objects into their containers
         block.channel_indexes.append(chx)
@@ -151,7 +153,7 @@ class BrainwareDamIO(BaseIO):
         with open(self._path, 'rb') as fobject:
             # while the file is not done keep reading segments
             while True:
-                seg = self._read_segment(fobject)
+                seg = self._read_segment(fobject, lazy)
                 # if there are no more Segments, stop
                 if not seg:
                     break
@@ -177,7 +179,7 @@ class BrainwareDamIO(BaseIO):
     # -------------------------------------------------------------------------
     # -------------------------------------------------------------------------
 
-    def _read_segment(self, fobject):
+    def _read_segment(self, fobject, lazy):
         '''
         Read a single segment with a single analogsignal
 
@@ -224,11 +226,20 @@ class BrainwareDamIO(BaseIO):
         # int16 * numpts -- the AnalogSignal itself
         signal = np.fromfile(fobject, dtype=np.int16, count=numpts)
 
-        sig = AnalogSignal(signal.astype(np.float) * pq.mV,
-                           t_start=t_start * pq.d,
-                           file_origin=self._filename,
-                           sampling_period=1. * pq.s,
-                           copy=False)
+        # handle lazy loading
+        if lazy:
+            sig = AnalogSignal([], t_start=t_start*pq.d,
+                               file_origin=self._filename,
+                               sampling_period=1.*pq.s,
+                               units=pq.mV,
+                               dtype=np.float)
+            sig.lazy_shape = len(signal)
+        else:
+            sig = AnalogSignal(signal.astype(np.float)*pq.mV,
+                               t_start=t_start*pq.d,
+                               file_origin=self._filename,
+                               sampling_period=1.*pq.s,
+                               copy=False)
         # Note: setting the sampling_period to 1 s is arbitrary
 
         # load the AnalogSignal and parameters into a new Segment

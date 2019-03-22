@@ -57,16 +57,16 @@ def get_TrialCount(doc, trialtype=None, performance_code=None):
     sec = doc['Recording']['TaskSettings']
 
     if performance_code == 255:
-        output = sec.properties['CorrectTrialCount'].values[0]
+        output = sec.properties['CorrectTrialCount'].value.data
 
     elif performance_code == 191:
-        output = sec.properties['GripErrorTrialCount'].values[0]
+        output = sec.properties['GripErrorTrialCount'].value.data
 
     elif performance_code in [0, 159, 161, 163, 167, 175]:
         subsec = sec['TrialTypeSettings']
 
     else:
-        output = sec.properties['TotalTrialCount'].values[0]
+        output = sec.properties['TotalTrialCount'].value.data
 
     # TODO: extend to trial types and other performance codes
 
@@ -93,7 +93,7 @@ def get_TrialIDs(doc, idtype='TrialID'):
     for trsec in sec.itersections(filter_func=ff):
         def FF(x): return x.name == idtype
         output.append(
-            [p for p in trsec.iterproperties(filter_func=FF)][0].values[0])
+            [p for p in trsec.iterproperties(filter_func=FF)][0].value.data)
 
     return sorted(output)
 
@@ -118,7 +118,7 @@ def get_TrialType(doc, trialid, code=True):
     def ff(x): return x.name == 'Trial_%03i' % trialid
     sec = [s for s in doc.itersections(filter_func=ff)][0]
 
-    output = sec.properties['TrialType'].values[0]
+    output = sec.properties['TrialType'].value.data
 
     return output
 
@@ -145,7 +145,7 @@ def get_PerformanceCode(doc, trialid, code=True):
     sec = [s for s in doc.itersections(filter_func=ff1)][0]
 
     def ff2(x): return x.name == 'PerformanceCode'
-    output = [p for p in sec.iterproperties(filter_func=ff2)][0].values[0]
+    output = [p for p in sec.iterproperties(filter_func=ff2)][0].value.data
 
     if code:
         return output
@@ -155,7 +155,7 @@ def get_PerformanceCode(doc, trialid, code=True):
         sec = [s for s in doc.itersections(filter_func=ff3)][0]
 
         def ff4(x): return x.name == 'pc_%i' % output
-        output = [p for p in sec.iterproperties(filter_func=ff4)][0].values[0]
+        output = [p for p in sec.iterproperties(filter_func=ff4)][0].value.data
 
         return output
 

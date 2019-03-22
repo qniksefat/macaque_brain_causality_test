@@ -175,49 +175,49 @@ seg_raw = bl_raw.segments[0]
 seg_lfp = bl_lfp.segments[0]
 
 # Displaying loaded data structure as string output
-print("\nBlock")
-print('Attributes ', bl_raw.__dict__.keys())
-print('Annotations', bl_raw.annotations)
-print("\nSegment")
-print('Attributes ', seg_raw.__dict__.keys())
-print('Annotations', seg_raw.annotations)
-print("\nEvents")
+print "\nBlock"
+print 'Attributes ', bl_raw.__dict__.keys()
+print 'Annotations', bl_raw.annotations
+print "\nSegment"
+print 'Attributes ', seg_raw.__dict__.keys()
+print 'Annotations', seg_raw.annotations
+print "\nEvents"
 for x in seg_raw.events:
-    print('\tEvent with name', x.name)
-    print('\t\tAttributes ', x.__dict__.keys())
-    print('\t\tAnnotation keys', x.annotations.keys())
-    print('\t\ttimes', x.times[:20])
+    print '\tEvent with name', x.name
+    print '\t\tAttributes ', x.__dict__.keys()
+    print '\t\tAnnotation keys', x.annotations.keys()
+    print '\t\ttimes', x.times[:20]
     for anno_key in ['trial_id', 'trial_timestamp_id', 'trial_event_labels',
                      'trial_reject_IFC']:
-        print('\t\t'+anno_key, x.annotations[anno_key][:20])
+        print '\t\t'+anno_key, x.annotations[anno_key][:20]
 
-print("\nChannels")
+print "\nChannels"
 for x in bl_raw.channel_indexes:
-    print('\tChannel with name', x.name)
-    print('\t\tAttributes ', x.__dict__.keys())
-    print('\t\tchannel_ids', x.channel_ids)
-    print('\t\tchannel_names', x.channel_names)
-    print('\t\tAnnotations', x.annotations)
-print("\nUnits")
+    print '\tChannel with name', x.name
+    print '\t\tAttributes ', x.__dict__.keys()
+    print '\t\tchannel_ids', x.channel_ids
+    print '\t\tchannel_names', x.channel_names
+    print '\t\tAnnotations', x.annotations
+print "\nUnits"
 for x in bl_raw.list_units:
-    print('\tUnit with name', x.name)
-    print('\t\tAttributes ', x.__dict__.keys())
-    print('\t\tAnnotations', x.annotations)
-    print('\t\tchannel_id', x.annotations['channel_id'])
+    print '\tUnit with name', x.name
+    print '\t\tAttributes ', x.__dict__.keys()
+    print '\t\tAnnotations', x.annotations
+    print '\t\tchannel_id', x.annotations['channel_id']
     assert(x.annotations['channel_id'] == x.channel_index.channel_ids[0])
-print("\nSpikeTrains")
+print "\nSpikeTrains"
 for x in seg_raw.spiketrains:
-    print('\tSpiketrain with name', x.name)
-    print('\t\tAttributes ', x.__dict__.keys())
-    print('\t\tAnnotations', x.annotations)
-    print('\t\tchannel_id', x.annotations['channel_id'])
-    print('\t\tspike times', x.times[0:20])
-print("\nAnalogSignals")
+    print '\tSpiketrain with name', x.name
+    print '\t\tAttributes ', x.__dict__.keys()
+    print '\t\tAnnotations', x.annotations
+    print '\t\tchannel_id', x.annotations['channel_id']
+    print '\t\tspike times', x.times[0:20]
+print "\nAnalogSignals"
 for x in seg_raw.analogsignals:
-    print('\tAnalogSignal with name', x.name)
-    print('\t\tAttributes ', x.__dict__.keys())
-    print('\t\tAnnotations', x.annotations)
-    print('\t\tchannel_id', x.annotations['channel_id'])
+    print '\tAnalogSignal with name', x.name
+    print '\t\tAttributes ', x.__dict__.keys()
+    print '\t\tAnnotations', x.annotations
+    print '\t\tchannel_id', x.annotations['channel_id']
 
 # get start and stop events of trials
 start_events = neo_utils.get_events(
@@ -374,7 +374,7 @@ for tt in octrty:
         color = trialtype_colors[tt]
 
     B = ax1.bar(
-        x=left, height=height, width=width, color=color, linewidth=0.001, align='edge')
+        left=left, height=height, width=width, color=color, linewidth=0.001)
 
     # Mark trials of current trial type (left) if a grip error occurred
     x = [i for i in list(set(left) & set(trids_pc191))]
@@ -485,7 +485,7 @@ for spiketrain in trial_seg_raw.spiketrains:
             times.rescale(wf_time_unit)[0], times.rescale(wf_time_unit)[-1])
 
 # adding xlabels and titles
-for unit_id, ax in unit_ax_translator.items():
+for unit_id, ax in unit_ax_translator.iteritems():
     ax.set_title('unit %i (%s)' % (unit_id, unit_type[unit_id]),
                  fontdict_titles)
     ax.tick_params(direction='in', length=3, labelsize='xx-small',
@@ -605,13 +605,13 @@ trialx_sec = odmldoc['Recording']['TaskSettings']['Trial_%03i' % trialx_trid]
 
 # get correct channel id
 trialx_chids = [143]
-FSRi = trialx_sec['AnalogEvents'].properties['UsedForceSensor'].values[0]
+FSRi = trialx_sec['AnalogEvents'].properties['UsedForceSensor'].value.data
 FSRinfosec = odmldoc['Setup']['Apparatus']['TargetObject']['FSRSensor']
 if 'SG' in trialx_trty:
-    sgchids = FSRinfosec.properties['SGChannelIDs'].values
+    sgchids = [d.data for d in FSRinfosec.properties['SGChannelIDs'].values]
     trialx_chids.append(min(sgchids) if FSRi == 1 else max(sgchids))
 else:
-    pgchids = FSRinfosec.properties['PGChannelIDs'].values
+    pgchids = [d.data for d in FSRinfosec.properties['PGChannelIDs'].values]
     trialx_chids.append(min(pgchids) if FSRi == 1 else max(pgchids))
 
 

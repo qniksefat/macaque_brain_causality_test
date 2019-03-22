@@ -1,23 +1,16 @@
-import datetime as dt
-import re
-import sys
+"""
+Provides functionality for validation of the data-types specified
+for odml
+"""
 
-from enum import Enum
+import sys
 
 self = sys.modules[__name__].__dict__
 
-"""
-Provides functionality for validation of the data-types specified for odML
-"""
-
-try:
-    unicode = unicode
-except NameError:
-    unicode = str
-
-FORMAT_DATE = "%Y-%m-%d"
-FORMAT_DATETIME = "%Y-%m-%d %H:%M:%S"
-FORMAT_TIME = "%H:%M:%S"
+import datetime
+import binascii
+import hashlib
+from enum import Enum
 
 
 class DType(str, Enum):
@@ -31,34 +24,10 @@ class DType(str, Enum):
     time = 'time'
     boolean = 'boolean'
     person = 'person'
+    binary = 'binary'
 
     def __str__(self):
         return self.name
-
-
-def default_values(dtype):
-    dtype = dtype.lower()
-    default_dtype_value = {
-        'string': '',
-        'text': '',
-        'int': 0,
-        'float': 0.0,
-        'url': '',
-        'boolean': False
-    }
-
-    if dtype in default_dtype_value:
-        return default_dtype_value[dtype]
-
-    if dtype == 'datetime':
-        return dt.datetime.now().replace(microsecond=0)
-    if dtype == 'date':
-        return dt.datetime.now().date()
-    if dtype == 'time':
-        return dt.datetime.now().replace(microsecond=0).time()
-
-    return ''  # Maybe return None ?
-
 
 _dtype_map = {'str': 'string', 'bool': 'boolean'}
 
@@ -72,69 +41,89 @@ def infer_dtype(value):
         if dtype == 'string' and '\n' in value:
             dtype = 'text'
         return dtype
-
-    # If unable to infer a dtype of given value, return default as *string*
-    return 'string'
+    else:
+        return None
 
 
 def valid_type(dtype):
     """
-    Checks if *dtype* is a valid odML value data type.
+    checks if *dtype* is a valid type
     """
-    if dtype is None:
-        return True
-
-    if not isinstance(dtype, str) and not isinstance(dtype, unicode):
-        return False
-
     dtype = dtype.lower()
     if dtype in _dtype_map:
         dtype = _dtype_map[dtype]
-
     if hasattr(DType, dtype):
         return True
-
-    # Check odML tuple dtype.
-    rexp = re.compile("^[1-9][0-9]*-tuple$")
-    if len(rexp.findall(dtype)) == 1:
+    if dtype is None:
         return True
+
+    if dtype.endswith("-tuple"):
+        try:
+            int(dtype[:-6])
+            return True
+        except ValueError:
+            pass
 
     return False
 
 
-def get(string, dtype=None):
+# TODO also take encoding into account
+def validate(string, dtype):
     """
-    Convert *string* to the corresponding *dtype*
+    checks if:
+
+     * *dtype* is a valid type
+     * *string* is a valid expression of type *dtype*
     """
-    if not dtype:
-        return str_get(string)
-    # special case, as the count-number is included in the type-name
-    if dtype.endswith("-tuple"):
-        return tuple_get(string, int(dtype[:-6]))
+    try:
+        if not valid_type(dtype):
+            if dtype.endswith("-tuple"):
+                count = int(dtype[:-6])
+                #try to parse it
+                tuple_get(string, count=count)
+                return True
+                #try to parse it
+            self.get(dtype + "_get", str_get)(string)
+        else:
+            return False
+    except RuntimeError:
+        #any error, this type ain't valid
+        return False
+
+
+def get(string, dtype=None, encoding=None):
+    """
+    convert *string* to the corresponding *dtype*
+    """
+    if not dtype: return str_get(string)
+    if dtype.endswith("-tuple"): # special case, as the count-number is included in the type-name
+        return tuple_get(string)
+    if dtype == "binary":
+        return binary_get(string, encoding)
     return self.get(dtype + "_get", str_get)(string)
 
 
-def set(value, dtype=None):
+def set(value, dtype=None, encoding=None):
     """
-    Serialize a *value* of type *dtype* to a unicode string
+    serialize a *value* of type *dtype* to a unicode string
     """
     if not dtype:
         return str_set(value)
     if dtype.endswith("-tuple"):
         return tuple_set(value)
+    if dtype == "binary":
+        return binary_set(value, encoding)
     if sys.version_info > (3, 0):
         if isinstance(value, str):
             return str_set(value)
     else:
-        if isinstance(value, (str, unicode)):
+        if type(value) in (str, unicode):
             return str_set(value)
     return self.get(dtype + "_set", str_set)(value)
 
 
 def int_get(string):
-    if string is None or string == "":
-        return default_values("int")
-
+    if not string: return 0
     try:
         return int(string)
     except ValueError:
@@ -143,111 +132,175 @@ def int_get(string):
 
 
 def float_get(string):
-    if string is None or string == "":
-        return default_values("float")
-
+    if not string: return 0.0
     return float(string)
 
 
 def str_get(string):
-    # Do not stringify empty list or dict but make sure boolean False gets through.
-    if string in [None, "", [], {}]:
-        return default_values("string")
-
     if sys.version_info < (3, 0):
         return unicode(string)
-
     return str(string)
 
 
-# Alias  str_set to str_get. Both perform same function.
-
-str_set = str_get
-string_get = str_get
-string_set = str_get
+def str_set(value):
+    try:
+        if sys.version_info < (3, 0):
+            return unicode(value)
+        else:
+            return str(value)
+    except Exception as ex:
+        fail = ex
+        raise fail
 
 
 def time_get(string):
-    if string is None or string == "":
-        return default_values("time")
-
-    if isinstance(string, dt.time):
-        return dt.datetime.strptime(string.strftime(FORMAT_TIME), FORMAT_TIME).time()
-
-    return dt.datetime.strptime(string, FORMAT_TIME).time()
+    if not string: return None
+    if type(string) is datetime.time:
+        return string.strftime('%H:%M:%S').time()
+    else:
+        return datetime.datetime.strptime(string, '%H:%M:%S').time()
 
 
-time_set = time_get
+def time_set(value):
+    if not value: return None
+    if type(value) is datetime.time:
+        return value.strftime("%H:%M:%S")
+    return value.isoformat()
 
 
 def date_get(string):
-    if string is None or string == "":
-        return default_values("date")
-
-    if isinstance(string, dt.date):
-        return dt.datetime.strptime(string.isoformat(), FORMAT_DATE).date()
-
-    return dt.datetime.strptime(string, FORMAT_DATE).date()
+    if not string: return None
+    if type(string) is datetime.date:
+        return datetime.datetime.strptime(string.isoformat(), '%Y-%m-%d').date()
+    else:
+        return datetime.datetime.strptime(string, '%Y-%m-%d').date()
 
 
-date_set = date_get
+date_set = time_set
 
 
 def datetime_get(string):
-    if string is None or string == "":
-        return default_values("datetime")
-
-    if isinstance(string, dt.datetime):
-        return dt.datetime.strptime(string.strftime(FORMAT_DATETIME), FORMAT_DATETIME)
-
-    return dt.datetime.strptime(string, FORMAT_DATETIME)
+    if not string: return None
+    if type(string) is datetime.datetime:
+        return string.strftime('%Y-%m-%d %H:%M:%S')
+    else:
+        return datetime.datetime.strptime(string, '%Y-%m-%d %H:%M:%S')
 
 
-datetime_set = datetime_get
+def datetime_set(value):
+    if not value: return None
+    if type(value) is datetime.datetime:
+        return value.strftime('%Y-%m-%d %H:%M:%S')
+    else:
+        return datetime.datetime.strptime(value, '%Y-%m-%d %H:%M:%S')
 
 
 def boolean_get(string):
-    if string in [None, "", [], {}]:
-        return default_values("boolean")
-
-    if isinstance(string, (unicode, str)):
-        string = string.lower()
-
-    truth = ["true", "1", True, "t"]  # be kind, spec only accepts True / False
-    if string in truth:
-        return True
-
-    false = ["false", "0", False, "f"]
-    if string in false:
-        return False
-
-    # disallow any values that cannot be interpreted as boolean.
-    raise ValueError
-
-# Alias boolean_set to boolean_get. Both perform same function.
+    if not string: return None
+    if type(string) is bool:
+        string = str(string)
+    string = string.lower()
+    truth = ["true", "t", "1"] # be kind, spec only accepts True / False
+    if string in truth: return True
+    false = ["false", "f", "0"]
+    if string in false: return False
+    raise ValueError("Cannot interpret '%s' as boolean" % string)
 
 
-boolean_set = boolean_get
-bool_get = boolean_get
-bool_set = boolean_set
+def boolean_set(value):
+    if value is None: return None
+    return str(value)
 
 
 def tuple_get(string, count=None):
     """
-    Parse a tuple string like "(1024;768)" and return strings of the elements
+    parse a tuple string like "(1024;768)" and return strings of the elements
     """
-    if not string:
-        return None
+    if not string: return None
     string = string.strip()
     assert string.startswith("(") and string.endswith(")")
     string = string[1:-1]
-    res = [x.strip() for x in string.split(";")]
-    if count is not None:  # be strict
+    res = string.split(";")
+    if count is not None: # be strict
         assert len(res) == count
     return res
 
 
 def tuple_set(value):
-    if not value:
-        return None
+    if not value: return None
     return "(%s)" % ";".join(value)
+
+###############################################################################
+# Binary Encoding Stuff
+###############################################################################
+
+class Encoder(object):
+    def __init__(self, encode, decode):
+        self._encode = encode
+        self._decode = decode
+
+    def encode(self, data):
+        if sys.version_info > (3, 0) and isinstance(data, str):
+            data = str.encode(data)
+        return self._encode(data)
+
+    def decode(self, string):
+        return self._decode(string)
+
+
+encodings = {
+    'base64': Encoder(lambda x: binascii.b2a_base64(x).strip(), binascii.a2b_base64),
+    'quoted-printable': Encoder(binascii.b2a_qp, binascii.a2b_qp),
+    'hexadecimal': Encoder(binascii.b2a_hex, binascii.a2b_hex),
+    None: Encoder(lambda x: x, lambda x: x), #identity encoder
+}
+
+
+def valid_encoding(encoding):
+    return encoding in encodings
+
+
+def binary_get(string, encoding=None):
+    "binary decode the *string* according to *encoding*"
+    if not string: return None
+    return encodings[encoding].decode(string)
+
+
+def binary_set(value, encoding=None):
+    "binary encode the *value* according to *encoding*"
+    if not value: return None
+    return encodings[encoding].encode(value)
+
+
+def calculate_crc32_checksum(data):
+    if sys.version_info < (3, 0):
+        return "%08x" % (binascii.crc32(data) & 0xffffffff)
+    else:
+        if isinstance(data, str):
+            data = str.encode(data)
+        return "%08x" % (binascii.crc32(data) & 0xffffffff)
+
+
+
+checksums = {
+    'crc32': calculate_crc32_checksum,
+}
+
+# allow to use any available algorithm
+if sys.version_info > (3, 0):
+    for algo in hashlib.algorithms_guaranteed:
+        checksums[algo] = lambda data, func=getattr(hashlib, algo): func(data).hexdigest()
+elif not sys.version_info < (2, 7):
+    for algo in hashlib.algorithms:
+        checksums[algo] = lambda data, func=getattr(hashlib, algo): func(data).hexdigest()
+
+
+def valid_checksum_type(checksum_type):
+    return checksum_type in checksums
+
+
+def calculate_checksum(data, checksum_type):
+    if data is None: data = ''
+    if isinstance(data, str):
+        data = str.encode(data)
+    return checksums[checksum_type](data)

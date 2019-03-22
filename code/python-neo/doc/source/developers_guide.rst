@@ -38,9 +38,11 @@ a GitHub account and then set to watch the repository at `GitHub Repository`_
 Requirements
 ------------
 
-    * Python_ 2.7, 3.4 or later
+    * Python_ 2.6, 2.7, 3.3-3.5
     * numpy_ >= 1.7.1
     * quantities_ >= 0.9.0
+    * if using Python 2.6, unittest2_ >= 0.5.1
+    * Setuptools >= 0.7
     * nose_ >= 0.11.1 (for running tests)
     * Sphinx_ >= 0.6.4 (for building documentation)
     * (optional) tox_ >= 0.9 (makes it easier to test with multiple Python versions)
@@ -100,7 +102,7 @@ on your system::
 
     $ cd neo/test
 
-With Python 2.7 or 3.x::
+With Python 2.7 or 3.3::
 
     $ python -m unittest discover
     $ python3 -m unittest discover
@@ -196,12 +198,13 @@ open a pull request on GitHub
 (see https://help.github.com/articles/using-pull-requests).
 
 
-Python version
---------------
+Python 3
+--------
 
-Neo core should work with both Python 2.7 and Python 3 (version 3.4 or newer).
-Neo IO modules should ideally work with both Python 2 and 3, but certain
-modules may only work with one or the other (see :doc:`install`).
+Neo core should work with both recent versions of Python 2 (versions 2.6 and
+2.7) and Python 3 (version 3.3 or newer). Neo IO modules should ideally work with both
+Python 2 and 3, but certain modules may only work with one or the other
+(see :doc:`install`).
 
 So far, we have managed to write code that works with both Python 2 and 3.
 Mainly this involves avoiding the ``print`` statement (use ``logging.info``
@@ -222,7 +225,7 @@ Coding standards and style
 --------------------------
 
 All code should conform as much as possible to `PEP 8`_, and should run with
-Python 2.7, and 3.4 or newer.
+Python 2.6, 2.7, and 3.3 or newer.
 
 You can use the `pep8`_ program to check the code for PEP 8 conformity.
 You can also use `flake8`_, which combines pep8 and pyflakes.
@@ -242,27 +245,25 @@ Making a release
 
 Add a section in :file:`/doc/source/whatisnew.rst` for the release.
 
-First check that the version string (in :file:`neo/version.py`) is correct.
+First check that the version string (in :file:`neo/version.py`,
+:file:`setup.py`, :file:`doc/conf.py` and :file:`doc/install.rst`) is correct.
 
 To build a source package::
 
     $ python setup.py sdist
 
+To upload the package to `PyPI`_ (currently Samuel Garcia and Andrew Davison
+have the necessary permissions to do this)::
 
-Tag the release in the Git repository and push it::
-
-    $ git tag <version>
-    $ git push --tags origin
-    $ git push --tags upstream
-
-
-To upload the package to `PyPI`_ (currently Samuel Garcia,  Andrew Davison,
-Michael Denker and Julia Sprenger have the necessary permissions to do this)::
-
-    $ twine upload dist/neo-0.X.Y.tar.gz
+    $ python setup.py sdist upload
+    $ python setup.py upload_docs --upload-dir=doc/build/html
 
 .. talk about readthedocs
 
+Finally, tag the release in the Git repository and push it::
+
+    $ git tag <version>
+    $ git push --tags origin
     
 
 .. make a release branch

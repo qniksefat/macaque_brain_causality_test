@@ -119,6 +119,7 @@ class BrainwareF32IO(BaseIO):
         self._filename = path.basename(filename)
 
         self._fsrc = None
+        self.__lazy = False
 
         self._blk = None
         self.__unit = None
@@ -128,18 +129,17 @@ class BrainwareF32IO(BaseIO):
         self.__seg = None
         self.__spiketimes = None
 
-    def read(self, lazy=False, **kargs):
+    def read(self, lazy=False, cascade=True, **kargs):
         '''
         Reads simple spike data file "fname" generated with BrainWare
         '''
-        return self.read_block(lazy=lazy, )
+        return self.read_block(lazy=lazy, cascade=cascade)
 
-    def read_block(self, lazy=False, **kargs):
+    def read_block(self, lazy=False, cascade=True, **kargs):
         '''
         Reads a block from the simple spike data file "fname" generated
         with BrainWare
         '''
-        assert not lazy, 'Do not support lazy'
 
         # there are no keyargs implemented to so far.  If someone tries to pass
         # them they are expecting them to do something or making a mistake,
@@ -148,13 +148,18 @@ class BrainwareF32IO(BaseIO):
             raise NotImplementedError('This method does not have any '
                                       'argument implemented yet')
         self._fsrc = None
+        self.__lazy = lazy
 
         self._blk = Block(file_origin=self._filename)
         block = self._blk
 
+        # if we aren't doing cascade, don't load anything
+        if not cascade:
+            return block
+
         # create the objects to store other objects
         chx = ChannelIndex(file_origin=self._filename,
-                           index=np.array([], dtype=np.int))
+                                    index=np.array([], dtype=np.int))
         self.__unit = Unit(file_origin=self._filename)
 
         # load objects into their containers
@@ -178,6 +183,7 @@ class BrainwareF32IO(BaseIO):
 
         # cleanup attributes
         self._fsrc = None
+        self.__lazy = False
 
         self._blk = None
 
@@ -279,11 +285,18 @@ class BrainwareF32IO(BaseIO):
                                  **self.__params)
             self.__spiketimes = []
 
-        times = pq.Quantity(self.__spiketimes, dtype=np.float32,
-                            units=pq.ms)
-        train = SpikeTrain(times,
-                           t_start=0 * pq.ms, t_stop=self.__t_stop * pq.ms,
-                           file_origin=self._filename)
+        if self.__lazy:
+            train = SpikeTrain(pq.Quantity([], dtype=np.float32,
+                                           units=pq.ms),
+                               t_start=0*pq.ms, t_stop=self.__t_stop * pq.ms,
+                               file_origin=self._filename)
+            train.lazy_shape = len(self.__spiketimes)
+        else:
+            times = pq.Quantity(self.__spiketimes, dtype=np.float32,
+                                units=pq.ms)
+            train = SpikeTrain(times,
+                               t_start=0*pq.ms, t_stop=self.__t_stop * pq.ms,
+                               file_origin=self._filename)
 
         self.__seg.spiketrains = [train]
         self.__unit.spiketrains.append(train)

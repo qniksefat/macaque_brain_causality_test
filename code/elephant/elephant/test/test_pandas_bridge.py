@@ -13,7 +13,7 @@ from itertools import chain
 
 from neo.test.generate_datasets import fake_neo
 import numpy as np
-from numpy.testing import assert_array_equal
+from numpy.testing.utils import assert_array_equal
 import quantities as pq
 
 try:
@@ -1636,10 +1636,7 @@ class MultiEventsToDataframeTestCase(unittest.TestCase):
         self.assertCountEqual(keys, targ.columns.names)
         self.assertCountEqual(keys, res0.columns.names)
 
-        assert_array_equal(
-            np.array(targ.values, dtype=np.float),
-            np.array(res0.values, dtype=np.float))
-
+        assert_array_equal(targ.values, res0.values)
 
         assert_frame_equal(targ, res0)
 
@@ -1684,15 +1681,9 @@ class MultiEventsToDataframeTestCase(unittest.TestCase):
         self.assertCountEqual(keys, res1.columns.names)
         self.assertCountEqual(keys, res2.columns.names)
 
-        assert_array_equal(
-            np.array(targ.values, dtype=np.float),
-            np.array(res0.values, dtype=np.float))
-        assert_array_equal(
-            np.array(targ.values, dtype=np.float),
-            np.array(res1.values, dtype=np.float))
-        assert_array_equal(
-            np.array(targ.values, dtype=np.float),
-            np.array(res2.values, dtype=np.float))
+        assert_array_equal(targ.values, res0.values)
+        assert_array_equal(targ.values, res1.values)
+        assert_array_equal(targ.values, res2.values)
 
         assert_frame_equal(targ, res0)
         assert_frame_equal(targ, res1)
@@ -1742,18 +1733,10 @@ class MultiEventsToDataframeTestCase(unittest.TestCase):
         self.assertCountEqual(keys, res2.columns.names)
         self.assertCountEqual(keys, res3.columns.names)
 
-        assert_array_equal(
-            np.array(targ.values, dtype=np.float),
-            np.array(res0.values, dtype=np.float))
-        assert_array_equal(
-            np.array(targ.values, dtype=np.float),
-            np.array(res1.values, dtype=np.float))
-        assert_array_equal(
-            np.array(targ.values, dtype=np.float),
-            np.array(res2.values, dtype=np.float))
-        assert_array_equal(
-            np.array(targ.values, dtype=np.float),
-            np.array(res3.values, dtype=np.float))
+        assert_array_equal(targ.values, res0.values)
+        assert_array_equal(targ.values, res1.values)
+        assert_array_equal(targ.values, res2.values)
+        assert_array_equal(targ.values, res3.values)
 
         assert_frame_equal(targ, res0)
         assert_frame_equal(targ, res1)
@@ -1796,12 +1779,8 @@ class MultiEventsToDataframeTestCase(unittest.TestCase):
         self.assertCountEqual(keys, res0.columns.names)
         self.assertCountEqual(keys, res1.columns.names)
 
-        assert_array_equal(
-            np.array(targ.values, dtype=np.float),
-            np.array(res0.values, dtype=np.float))
-        assert_array_equal(
-            np.array(targ.values, dtype=np.float),
-            np.array(res1.values, dtype=np.float))
+        assert_array_equal(targ.values, res0.values)
+        assert_array_equal(targ.values, res1.values)
 
         assert_frame_equal(targ, res0)
         assert_frame_equal(targ, res1)
@@ -1848,15 +1827,9 @@ class MultiEventsToDataframeTestCase(unittest.TestCase):
         self.assertCountEqual(keys, res1.columns.names)
         self.assertCountEqual(keys, res2.columns.names)
 
-        assert_array_equal(
-            np.array(targ.values, dtype=np.float),
-            np.array(res0.values, dtype=np.float))
-        assert_array_equal(
-            np.array(targ.values, dtype=np.float),
-            np.array(res1.values, dtype=np.float))
-        assert_array_equal(
-            np.array(targ.values, dtype=np.float),
-            np.array(res2.values, dtype=np.float))
+        assert_array_equal(targ.values, res0.values)
+        assert_array_equal(targ.values, res1.values)
+        assert_array_equal(targ.values, res2.values)
 
         assert_frame_equal(targ, res0)
         assert_frame_equal(targ, res1)
@@ -1907,18 +1880,10 @@ class MultiEventsToDataframeTestCase(unittest.TestCase):
         self.assertCountEqual(keys, res2.columns.names)
         self.assertCountEqual(keys, res3.columns.names)
 
-        assert_array_equal(
-            np.array(targ.values, dtype=np.float),
-            np.array(res0.values, dtype=np.float))
-        assert_array_equal(
-            np.array(targ.values, dtype=np.float),
-            np.array(res1.values, dtype=np.float))
-        assert_array_equal(
-            np.array(targ.values, dtype=np.float),
-            np.array(res2.values, dtype=np.float))
-        assert_array_equal(
-            np.array(targ.values, dtype=np.float),
-            np.array(res3.values, dtype=np.float))
+        assert_array_equal(targ.values, res0.values)
+        assert_array_equal(targ.values, res1.values)
+        assert_array_equal(targ.values, res2.values)
+        assert_array_equal(targ.values, res3.values)
 
         assert_frame_equal(targ, res0)
         assert_frame_equal(targ, res1)
@@ -1962,12 +1927,8 @@ class MultiEventsToDataframeTestCase(unittest.TestCase):
         self.assertCountEqual(keys, res0.columns.names)
         self.assertCountEqual(keys, res1.columns.names)
 
-        assert_array_equal(
-            np.array(targ.values, dtype=np.float),
-            np.array(res0.values, dtype=np.float))
-        assert_array_equal(
-            np.array(targ.values, dtype=np.float),
-            np.array(res1.values, dtype=np.float))
+        assert_array_equal(targ.values, res0.values)
+        assert_array_equal(targ.values, res1.values)
 
         assert_frame_equal(targ, res0)
         assert_frame_equal(targ, res1)
@@ -2003,9 +1964,7 @@ class MultiEventsToDataframeTestCase(unittest.TestCase):
         self.assertCountEqual(keys, targ.columns.names)
         self.assertCountEqual(keys, res0.columns.names)
 
-        assert_array_equal(
-            np.array(targ.values, dtype=np.float),
-            np.array(res0.values, dtype=np.float))
+        assert_array_equal(targ.values, res0.values)
 
         assert_frame_equal(targ, res0)
 
@@ -2039,9 +1998,7 @@ class MultiEventsToDataframeTestCase(unittest.TestCase):
         self.assertCountEqual(keys, targ.columns.names)
         self.assertCountEqual(keys, res0.columns.names)
 
-        assert_array_equal(
-            np.array(targ.values, dtype=np.float),
-            np.array(res0.values, dtype=np.float))
+        assert_array_equal(targ.values, res0.values)
 
         assert_frame_equal(targ, res0)
 
@@ -2076,9 +2033,7 @@ class MultiEventsToDataframeTestCase(unittest.TestCase):
         self.assertCountEqual(keys, targ.columns.names)
         self.assertCountEqual(keys, res0.columns.names)
 
-        assert_array_equal(
-            np.array(targ.values, dtype=np.float),
-            np.array(res0.values, dtype=np.float))
+        assert_array_equal(targ.values, res0.values)
 
         assert_frame_equal(targ, res0)
 
@@ -2197,9 +2152,7 @@ class MultiEpochsToDataframeTestCase(unittest.TestCase):
         self.assertCountEqual(keys, targ.columns.names)
         self.assertCountEqual(keys, res0.columns.names)
 
-        assert_array_equal(
-            np.array(targ.values, dtype=np.float),
-            np.array(res0.values, dtype=np.float))
+        assert_array_equal(targ.values, res0.values)
 
         assert_frame_equal(targ, res0)
 
@@ -2244,15 +2197,9 @@ class MultiEpochsToDataframeTestCase(unittest.TestCase):
         self.assertCountEqual(keys, res1.columns.names)
         self.assertCountEqual(keys, res2.columns.names)
 
-        assert_array_equal(
-            np.array(targ.values, dtype=np.float),
-            np.array(res0.values, dtype=np.float))
-        assert_array_equal(
-            np.array(targ.values, dtype=np.float),
-            np.array(res1.values, dtype=np.float))
-        assert_array_equal(
-            np.array(targ.values, dtype=np.float),
-            np.array(res2.values, dtype=np.float))
+        assert_array_equal(targ.values, res0.values)
+        assert_array_equal(targ.values, res1.values)
+        assert_array_equal(targ.values, res2.values)
 
         assert_frame_equal(targ, res0)
         assert_frame_equal(targ, res1)
@@ -2302,18 +2249,10 @@ class MultiEpochsToDataframeTestCase(unittest.TestCase):
         self.assertCountEqual(keys, res2.columns.names)
         self.assertCountEqual(keys, res3.columns.names)
 
-        assert_array_equal(
-            np.array(targ.values, dtype=np.float),
-            np.array(res0.values, dtype=np.float))
-        assert_array_equal(
-            np.array(targ.values, dtype=np.float),
-            np.array(res1.values, dtype=np.float))
-        assert_array_equal(
-            np.array(targ.values, dtype=np.float),
-            np.array(res2.values, dtype=np.float))
-        assert_array_equal(
-            np.array(targ.values, dtype=np.float),
-            np.array(res3.values, dtype=np.float))
+        assert_array_equal(targ.values, res0.values)
+        assert_array_equal(targ.values, res1.values)
+        assert_array_equal(targ.values, res2.values)
+        assert_array_equal(targ.values, res3.values)
 
         assert_frame_equal(targ, res0)
         assert_frame_equal(targ, res1)
@@ -2356,12 +2295,8 @@ class MultiEpochsToDataframeTestCase(unittest.TestCase):
         self.assertCountEqual(keys, res0.columns.names)
         self.assertCountEqual(keys, res1.columns.names)
 
-        assert_array_equal(
-            np.array(targ.values, dtype=np.float),
-            np.array(res0.values, dtype=np.float))
-        assert_array_equal(
-            np.array(targ.values, dtype=np.float),
-            np.array(res1.values, dtype=np.float))
+        assert_array_equal(targ.values, res0.values)
+        assert_array_equal(targ.values, res1.values)
 
         assert_frame_equal(targ, res0)
         assert_frame_equal(targ, res1)
@@ -2408,15 +2343,9 @@ class MultiEpochsToDataframeTestCase(unittest.TestCase):
         self.assertCountEqual(keys, res1.columns.names)
         self.assertCountEqual(keys, res2.columns.names)
 
-        assert_array_equal(
-            np.array(targ.values, dtype=np.float),
-            np.array(res0.values, dtype=np.float))
-        assert_array_equal(
-            np.array(targ.values, dtype=np.float),
-            np.array(res1.values, dtype=np.float))
-        assert_array_equal(
-            np.array(targ.values, dtype=np.float),
-            np.array(res2.values, dtype=np.float))
+        assert_array_equal(targ.values, res0.values)
+        assert_array_equal(targ.values, res1.values)
+        assert_array_equal(targ.values, res2.values)
 
         assert_frame_equal(targ, res0)
         assert_frame_equal(targ, res1)
@@ -2467,18 +2396,10 @@ class MultiEpochsToDataframeTestCase(unittest.TestCase):
         self.assertCountEqual(keys, res2.columns.names)
         self.assertCountEqual(keys, res3.columns.names)
 
-        assert_array_equal(
-            np.array(targ.values, dtype=np.float),
-            np.array(res0.values, dtype=np.float))
-        assert_array_equal(
-            np.array(targ.values, dtype=np.float),
-            np.array(res1.values, dtype=np.float))
-        assert_array_equal(
-            np.array(targ.values, dtype=np.float),
-            np.array(res2.values, dtype=np.float))
-        assert_array_equal(
-            np.array(targ.values, dtype=np.float),
-            np.array(res3.values, dtype=np.float))
+        assert_array_equal(targ.values, res0.values)
+        assert_array_equal(targ.values, res1.values)
+        assert_array_equal(targ.values, res2.values)
+        assert_array_equal(targ.values, res3.values)
 
         assert_frame_equal(targ, res0)
         assert_frame_equal(targ, res1)
@@ -2522,12 +2443,8 @@ class MultiEpochsToDataframeTestCase(unittest.TestCase):
         self.assertCountEqual(keys, res0.columns.names)
         self.assertCountEqual(keys, res1.columns.names)
 
-        assert_array_equal(
-            np.array(targ.values, dtype=np.float),
-            np.array(res0.values, dtype=np.float))
-        assert_array_equal(
-            np.array(targ.values, dtype=np.float),
-            np.array(res1.values, dtype=np.float))
+        assert_array_equal(targ.values, res0.values)
+        assert_array_equal(targ.values, res1.values)
 
         assert_frame_equal(targ, res0)
         assert_frame_equal(targ, res1)
@@ -2563,9 +2480,7 @@ class MultiEpochsToDataframeTestCase(unittest.TestCase):
         self.assertCountEqual(keys, targ.columns.names)
         self.assertCountEqual(keys, res0.columns.names)
 
-        assert_array_equal(
-            np.array(targ.values, dtype=np.float),
-            np.array(res0.values, dtype=np.float))
+        assert_array_equal(targ.values, res0.values)
 
         assert_frame_equal(targ, res0)
 
@@ -2599,9 +2514,7 @@ class MultiEpochsToDataframeTestCase(unittest.TestCase):
         self.assertCountEqual(keys, targ.columns.names)
         self.assertCountEqual(keys, res0.columns.names)
 
-        assert_array_equal(
-            np.array(targ.values, dtype=np.float),
-            np.array(res0.values, dtype=np.float))
+        assert_array_equal(targ.values, res0.values)
 
         assert_frame_equal(targ, res0)
 
@@ -2636,9 +2549,7 @@ class MultiEpochsToDataframeTestCase(unittest.TestCase):
         self.assertCountEqual(keys, targ.columns.names)
         self.assertCountEqual(keys, res0.columns.names)
 
-        assert_array_equal(
-            np.array(targ.values, dtype=np.float),
-            np.array(res0.values, dtype=np.float))
+        assert_array_equal(targ.values, res0.values)
 
         assert_frame_equal(targ, res0)
 

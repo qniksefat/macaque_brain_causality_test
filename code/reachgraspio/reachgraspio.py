@@ -412,15 +412,16 @@ class ReachGraspIO(BlackrockIO):
         # If we did not specify an explicit sorting version, and there is an
         # odML, then make sure the detected sorting version matches the odML
         if self.odmldoc:
-            if sorting_postfix not in self.odmldoc.sections['PreProcessing'].sections[
-                    'OfflineSpikeSorting'].properties['Sortings'].values:
+            if self.odmldoc.sections['PreProcessing'].sections[
+                    'OfflineSpikeSorting'].properties[
+                    'Sortings'].value.data != sorting_postfix:
                 self._print_verbose(
                     "Attempting to utilize the most recent "
                     "sorting version in file %s, but the sorting version "
                     "specified in odML is %s" % (
                         sorting_version,
                         self.odmldoc.sections['PreProcessing'].sections[
-                            'OfflineSpikeSorting'].properties['Sortings'].values))
+                            'OfflineSpikeSorting'].properties['Sortings']))
                 self._load_spikesorting_info = False
             else:
                 self._load_spikesorting_info = True
@@ -449,21 +450,32 @@ class ReachGraspIO(BlackrockIO):
         if self.odmldoc:
             # Get rejection bands
             sec = self.odmldoc['PreProcessing']
-            bands = sec.properties['LFPBands'].values
+            bands = sec.properties['LFPBands'].value
 
             for band in bands:
-                sec = self.odmldoc['PreProcessing'][band]
+                sec = self.odmldoc['PreProcessing'][band.data]
 
-                if type(sec.properties['RejTrials'].values) != [-1]:
-                    rej_trials = [int(_) for _ in sec.properties['RejTrials'].values]
-                    rej_index = np.in1d(event.annotations['trial_id'], rej_trials)
-                elif sec.properties['RejTrials'].values == [-1]:
-                    rej_index = np.zeros((len(event.annotations['trial_id'])), dtype=bool)
+                if type(sec.properties['RejTrials'].value) is list:
+                    rej_trials = [int(_.data) for _ in sec.properties[
+                        'RejTrials'].value]
+                    rej_index = np.in1d(
+                        event.annotations['trial_id'],
+                        rej_trials)
+                elif sec.properties['RejTrials'].value.data == -1:
+                    rej_index = np.zeros(
+                        (len(event.annotations['trial_id'])), dtype=bool)
+                elif sec.properties['RejTrials'].value.data >= 0:
+                    rej_index = np.in1d(
+                        event.annotations['trial_id'],
+                        [sec.properties['RejTrials'].value])
                 else:
                     raise ValueError(
-                        "Invalid entry %s in odML for rejected trials in LFP  band %s." %
-                        (sec.properties['RejTrials'].values, band))
-                event.annotate(**{str('trial_reject_' + band): list(rej_index)})
+                        "Invalid entry %s in odML for rejected trials in LFP "
+                        " band %s." %
+                        (sec.properties['RejTrials'].value.data, band.data))
+
+                event.annotate(
+                    **{str('trial_reject_' + band.data): list(rej_index)})
 
     def __extract_task_condition(self, trialtypes):
         """
@@ -514,26 +526,26 @@ class ReachGraspIO(BlackrockIO):
                 for analog_events in trial_sec[
                         'AnalogEvents'][signalname].properties:
 
-                    time = analog_events.values * \
-                        pq.CompoundUnit(analog_events.unit)
+                    time = analog_events.value.data * \
+                        pq.CompoundUnit(analog_events.value.unit)
                     if time >= t_start and time < t_stop:
                         event_name.append(analog_events.name)
                         event_time.append(time)
-                        trial_id.extend(
-                            trial_sec.properties['TrialID'].values)
-                        trial_timestamp_id.extend(
+                        trial_id.append(
+                            trial_sec.properties['TrialID'].value.data)
+                        trial_timestamp_id.append(
                             trial_sec.properties[
-                                'TrialTimestampID'].values)
-                        performance_code.extend(
-                            trial_sec.properties['PerformanceCode'].values)
-                        trial_type.extend(
-                            trial_sec.properties['TrialType'].values)
+                                'TrialTimestampID'].value.data)
+                        performance_code.append(
+                            trial_sec.properties['PerformanceCode'].value.data)
+                        trial_type.append(
+                            trial_sec.properties['TrialType'].value.data)
 
         # Create event object with analog events
         analog_events = neo.Event(
             times=pq.Quantity(
                 [_.magnitude for _ in event_time],
-                units=event_time[0].units).rescale('ms').flatten(),
+                units=event_time[0].units).rescale('ms'),
             labels=np.array(event_name),
             name='AnalogTrialEvents',
             description='Events extracted from analog signals')
@@ -623,9 +635,9 @@ class ReachGraspIO(BlackrockIO):
                         tr_secs = sec.itersections(filter_func=ff)
                         for trial_sec in tr_secs:
                             if trial_sec.properties[
-                                    'TrialTimestampID'].values[0] == \
+                                    'TrialTimestampID'].value.data == \
                                     timestamp_id:
-                                ID = trial_sec.properties['TrialID'].values[0]
+                                ID = trial_sec.properties['TrialID'].value.data
                     trial_ID.append(ID)
                 # interpretation of GO/RW-OFF
                 elif self.event_labels_str[l] == 'GO/RW-OFF':
@@ -783,9 +795,9 @@ class ReachGraspIO(BlackrockIO):
             except KeyError:
                 return
 
-            suaids = sec.properties['SUAIDs'].values
-            muaid = sec.properties['MUAID'].values[0]
-            noiseids = sec.properties['NoiseIDs'].values
+            suaids = [v.data for v in sec.properties['SUAIDs'].values]
+            muaid = sec.properties['MUAID'].value.data
+            noiseids = [v.data for v in sec.properties['NoiseIDs'].values]
 
             if un.annotations['unit_id'] in suaids:
                 an_dict['sua'] = True
@@ -802,12 +814,16 @@ class ReachGraspIO(BlackrockIO):
             if ('Unit_%02i' % un.annotations['unit_id']) in sec.sections:
                 unit_sec = sec['Unit_%02i' % un.annotations['unit_id']]
                 if an_dict['sua']:
-                    an_dict['SNR'] = unit_sec.properties['SNR'].values[0]
+                    an_dict['SNR'] = unit_sec.properties['SNR'].value.data
 
-                    # TODO: Add units here
-                    an_dict['spike_duration'] = unit_sec.properties['SpikeDuration'].values[0]
-                    an_dict['spike_amplitude'] = unit_sec.properties['SpikeAmplitude'].values[0]
-                    an_dict['spike_count'] = unit_sec.properties['SpikeCount'].values[0]
+                    an_dict['spike_duration'] = unit_sec.properties[
+                        'SpikeDuration'].value.data
+
+                    an_dict['spike_amplitude'] = unit_sec.properties[
+                        'SpikeAmplitude'].value.data
+
+                    an_dict['spike_count'] = unit_sec.properties[
+                        'SpikeCount'].value.data
 
             # Annotate Unit and all children for convenience
             un.annotate(**an_dict)
@@ -830,17 +846,17 @@ class ReachGraspIO(BlackrockIO):
                 'Filter_ns%i' % asig.annotations['nsx']]
             asig.annotate(
                 filter_hi_pass_freq=pq.Quantity(
-                    sec.properties['HighPassFreq'].values[0],
-                    sec.properties['HighPassFreq'].unit),
+                    sec.properties['HighPassFreq'].value.data,
+                    sec.properties['HighPassFreq'].value.unit),
                 filter_lo_pass_freq=pq.Quantity(
-                    sec.properties['LowPassFreq'].values[0],
-                    sec.properties['LowPassFreq'].unit),
+                    sec.properties['LowPassFreq'].value.data,
+                    sec.properties['LowPassFreq'].value.unit),
                 filter_hi_pass_order=sec.properties[
-                    'HighPassOrder'].values[0],
+                    'HighPassOrder'].value.data,
                 filter_lo_pass_order=sec.properties[
-                    'LowPassOrder'].values[0],
+                    'LowPassOrder'].value.data,
                 filter_type=sec.properties[
-                    'Type'].values[0])
+                    'Type'].value.data)
 
     def __annotate_channelindex_with_odml(self, chidx):
         """
@@ -850,30 +866,30 @@ class ReachGraspIO(BlackrockIO):
         if self.odmldoc:
             # Get rejection bands
             sec = self.odmldoc['PreProcessing']
-            bands = sec.properties['LFPBands'].values
+            bands = sec.properties['LFPBands'].value
 
             if hasattr(bands, '__iter__'):
                 for band in bands:
-                    sec = self.odmldoc['PreProcessing'][band]
+                    sec = self.odmldoc['PreProcessing'][band.data]
 
-                    if type(sec.properties['RejElectrodes'].values) is list:
-                        rej_electrodes = [int(_) for _ in sec.properties[
-                            'RejElectrodes'].values]
+                    if type(sec.properties['RejElectrodes'].value) is list:
+                        rej_electrodes = [int(_.data) for _ in sec.properties[
+                            'RejElectrodes'].value]
                         rej = chidx.channel_ids[0] in rej_electrodes
-                    elif sec.properties['RejElectrodes'].values == -1:
+                    elif sec.properties['RejElectrodes'].value.data == -1:
                         rej = False
-                    elif sec.properties['RejElectrodes'].values >= 0:
+                    elif sec.properties['RejElectrodes'].value.data >= 0:
                         rej_electrodes = sec.properties[
-                            'RejElectrodes'].values
+                            'RejElectrodes'].value.data
                         rej = (chidx.channel_ids[0] == rej_electrodes)
                     else:
                         raise ValueError(
                             "Invalid entry %s in odML for rejected electrodes "
                             "in LFP band %s." % (
-                                sec.properties['RejElectrodes'].values,
-                                band))
+                                sec.properties['RejElectrodes'].value.data,
+                                band.data))
 
-                    rej_dict = {str('electrode_reject_' + band): rej}
+                    rej_dict = {str('electrode_reject_' + band.data): rej}
 
                     # Annotate ChannelIndex and all children for convenience
                     chidx.annotate(**rej_dict)
@@ -909,49 +925,49 @@ class ReachGraspIO(BlackrockIO):
         """
         sec = self.odmldoc['Project']
         bl.annotate(
-            project_name=sec.properties['Name'].values,
-            project_type=sec.properties['Type'].values,
-            project_subtype=sec.properties['Subtype'].values)
+            project_name=sec.properties['Name'].value.data,
+            project_type=sec.properties['Type'].value.data,
+            project_subtype=sec.properties['Subtype'].value.data)
 
         sec = self.odmldoc['Project']['TaskDesigns']
         bl.annotate(
-            taskdesigns=[v for v in sec.properties['UsedDesign'].values])
+            taskdesigns=[v.data for v in sec.properties['UsedDesign'].values])
 
         sec = self.odmldoc['Subject']
         bl.annotate(
-            subject_name=sec.properties['GivenName'].values,
-            subject_gender=sec.properties['Gender'].values,
-            subject_activehand=sec.properties['ActiveHand'].values,
-            subject_birthday=sec.properties['Birthday'].values)
+            subject_name=sec.properties['GivenName'].value.data,
+            subject_gender=sec.properties['Gender'].value.data,
+            subject_activehand=sec.properties['ActiveHand'].value.data,
+            subject_birthday=sec.properties['Birthday'].value.data)
 
         sec = self.odmldoc['Setup']
-        bl.annotate(setup_location=sec.properties['Location'].values)
+        bl.annotate(setup_location=sec.properties['Location'].value.data)
 
         sec = self.odmldoc['UtahArray']
-        bl.annotate(array_serialnum=sec.properties['SerialNo'].values)
+        bl.annotate(array_serialnum=sec.properties['SerialNo'].value.data)
 
         sec = self.odmldoc['UtahArray']['Connector']
-        bl.annotate(connector_type=sec.properties['Style'].values)
+        bl.annotate(connector_type=sec.properties['Style'].value.data)
 
         sec = self.odmldoc['UtahArray']['Array']
-        bl.annotate(arraygrids_tot_num=sec.properties['GridCount'].values)
+        bl.annotate(arraygrids_tot_num=sec.properties['GridCount'].value.data)
 
         sec = self.odmldoc['UtahArray']['Array']['Grid_01']
         bl.annotate(
-            electrodes_tot_num=sec.properties['ElectrodeCount'].values,
+            electrodes_tot_num=sec.properties['ElectrodeCount'].value.data,
             electrodes_pitch=pq.Quantity(
-                sec.properties['ElectrodePitch'].values,
-                units=sec.properties['ElectrodePitch'].unit),
-            arraygrid_row_num=sec.properties['GridRows'].values,
-            arraygrid_col_num=sec.properties['GridColumns'].values)
+                sec.properties['ElectrodePitch'].value.data,
+                units=sec.properties['ElectrodePitch'].value.unit),
+            arraygrid_row_num=sec.properties['GridRows'].value.data,
+            arraygrid_col_num=sec.properties['GridColumns'].value.data)
 
         secs = self.odmldoc['UtahArray']['Array'].sections
         bl.annotate(
             avail_electrode_ids=[])
         for i in range(1, 101):
-            elidx = [s.properties['ID'].values for s in secs if
+            elidx = [s.properties['ID'].value.data for s in secs if
                      s.name.startswith('Electrode') and
-                     s.properties['ConnectorAlignedID'].values[0] == i]
+                     s.properties['ConnectorAlignedID'].value.data == i]
             if len(elidx) == 0:
                 bl.annotations['avail_electrode_ids'].append(-1)
             elif len(elidx) == 1:
@@ -970,8 +986,8 @@ class ReachGraspIO(BlackrockIO):
                 'Cerebus']['NeuralSignalProcessor']['NeuralSignals'][
                 'Filter_ns%i' % asig.annotations['nsx']]
             shift = pq.Quantity(
-                sec.properties['EstimatedShift'].values[0],
-                sec.properties['EstimatedShift'].unit)
+                sec.properties['EstimatedShift'].value.data,
+                sec.properties['EstimatedShift'].value.unit)
             asig.t_start = asig.t_start - shift
             # Annotate shift
             asig.annotate(filter_shift_correction=shift)
@@ -997,7 +1013,7 @@ class ReachGraspIO(BlackrockIO):
                 else:
                     event_time = np.concatenate((
                         event_time,
-                        event.times.rescale(event_units).magnitude.flatten()))
+                        event.times.rescale(event_units).magnitude))
 
                 # Transfer annotations
                 trial_id.extend(

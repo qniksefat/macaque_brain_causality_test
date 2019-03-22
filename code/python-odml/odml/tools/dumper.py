@@ -1,7 +1,6 @@
 """
-Dumps odML-Structures
+Dumps ODML-Structures
 """
-from .xmlparser import to_csv
 
 
 def get_props(obj, props):
@@ -9,34 +8,21 @@ def get_props(obj, props):
     for p in props:
         if hasattr(obj, p):
             x = getattr(obj, p)
-            if x is not None:
-                if isinstance(x, list) or isinstance(x, tuple):
-                    out.append("%s=%s" % (p, to_csv(x)))
-                else:
-                    out.append("%s=%s" % (p, repr(x)))
-
+            if not x is None:
+                out.append("%s=%s" % (p, repr(x)))
     return ", ".join(out)
-
-
-def dumpProperty(property, indent=1):
-    # TODO : (PEP8) Find a better way to split the following line
-    print("%*s:%s (%s)" % (indent, " ", property.name,
-          get_props(property, ["definition", "values", "uncertainty", "unit",
-                               "dtype", "value_reference", "dependency",
-                               "dependencyValue"])))
 
 
 def dumpSection(section, indent=1):
     if section is None:
         return
 
-    # TODO : (PEP8) Find a better way to split the following line
-    print("%*s*%s (%s)" % (indent, " ", section.name,
-          get_props(section, ["type", "definition", "link",
-                              "include", "repository"])))
+    print("%*s*%s (%s)" % (indent, " ", section.name, get_props(section, ["type", "definition", "id", "link", "include", "repository", "mapping"])))
 
     for prop in section.properties:
-        dumpProperty(prop, indent + 1)
+        print("%*s:%s (%s)" % (indent + 1, " ", prop.name, get_props(prop, ["synonym", "definition", "mapping", "dependency", "dependencyValue"])))
+        for value in prop.values:
+            print("%*s:%s (%s)" % (indent + 3, " ", value.data, get_props(value, ["dtype", "unit", "uncertainty", "definition", "id", "defaultFileName"])))
 
     for sub in section.sections:
         dumpSection(sub, indent * 2)
