@@ -1,16 +1,19 @@
 _property = property
-import sys
-from odml import doc
-from odml import property
-from odml import section
-from odml import value
-from odml.dtypes import DType
+
+from . import doc
+from . import property
+from . import section
+from .dtypes import DType
+from .fileio import load, save, display
+from .info import VERSION
+from .tools.parser_utils import SUPPORTED_PARSERS as PARSERS
+
+__version__ = VERSION
 
 
 class odml_implementation(object):
     name = None
     provides = []
-    Value = None
     Property = None
     Section = None
     Document = None
@@ -19,10 +22,6 @@ class odml_implementation(object):
 class BasicImplementation(odml_implementation):
     name = 'basic'
     provides = ['basic']
-
-    @_property
-    def Value(self):
-        return value.BaseValue
 
     @_property
     def Section(self):
@@ -44,7 +43,8 @@ current_implementation = BasicImplementation()
 minimum_implementation = current_implementation
 
 
-def addImplementation(implementation, make_minimum=False, make_default=False, key=None):
+def addImplementation(implementation, make_minimum=False,
+                      make_default=False, key=None):
     """register a new available implementation"""
     impls[implementation.name] = implementation
     if make_minimum and key is not None:
@@ -70,7 +70,9 @@ def setDefaultImplementation(key):
     global current_implementation
     if minimum_implementation.name not in impls[key].provides:
         raise TypeError(
-            "Cannot set default odml-implementation to '%s', because %s-capabilities are required which are not provided (provides: %s)" %
+            "Cannot set default odml-implementation to '%s', "
+            "because %s-capabilities are required which are not "
+            "provided (provides: %s)" %
             (key, minimum_implementation.name, ', '.join(impls[key].provides)))
     current_implementation = impls[key]
 
@@ -84,10 +86,12 @@ def setMinimumImplementation(key):
     """
     global minimum_implementation
     if key in minimum_implementation.provides:
-        return # the minimum implementation is already capable of this feature
+        return  # the minimum implementation is already capable of this feature
     if minimum_implementation.name not in impls[key].provides:
         raise TypeError(
-            "Cannot set new minimum odml-implementation to '%s', because %s-capabilities are already required which are not provided (provides: %s)" %
+            "Cannot set new minimum odml-implementation to '%s', "
+            "because %s-capabilities are already required which are "
+            "not provided (provides: %s)" %
             (key, minimum_implementation.name, ', '.join(impls[key].provides)))
     if key not in current_implementation.provides:
         setDefaultImplementation(key)
@@ -95,10 +99,6 @@ def setMinimumImplementation(key):
 
 
 addImplementation(current_implementation)
-
-
-def Value(*args, **kwargs):
-    return current_implementation.Value(*args, **kwargs)
 
 
 def Property(*args, **kwargs):
@@ -112,4 +112,4 @@ def Section(*args, **kwargs):
 def Document(*args, **kwargs):
     return current_implementation.Document(*args, **kwargs)
 
-#__all__ = [Value, Property, Section, Document]
+# __all__ = [Property, Section, Document]

@@ -1,28 +1,52 @@
-#!/usr/bin/env python
-
-import sys
+import json
 import os
-import glob
+import sys
 
 try:
     from setuptools import setup
 except ImportError as ex:
     from distutils.core import setup
 
-kwargs = {}
+with open(os.path.join("odml", "info.json")) as infofile:
+    infodict = json.load(infofile)
+
+VERSION = infodict["VERSION"]
+FORMAT_VERSION = infodict["FORMAT_VERSION"]
+AUTHOR = infodict["AUTHOR"]
+COPYRIGHT = infodict["COPYRIGHT"]
+CONTACT = infodict["CONTACT"]
+HOMEPAGE = infodict["HOMEPAGE"]
+CLASSIFIERS = infodict["CLASSIFIERS"]
+
 
 packages = [
     'odml',
-    'odml.tools'
+    'odml.tools',
+    'odml.scripts'
 ]
 
+with open('README.rst') as f:
+    description_text = f.read()
 
-setup(name='odML',
-      version='1.2',
-      description='open metadata Markup Language',
-      author='Hagen Fritsch',
-      author_email='fritsch+gnode@in.tum.de',
-      url='http://www.g-node.org/projects/odml',
-      packages=packages,
-      test_suite='test',
-      **kwargs)
+install_req = ["lxml", "pyyaml==3.13", "rdflib", "docopt", "pathlib"]
+
+if sys.version_info < (3, 4):
+    install_req += ["enum34"]
+
+setup(
+    name='odML',
+    version=VERSION,
+    description='open metadata Markup Language',
+    author=AUTHOR,
+    author_email=CONTACT,
+    url=HOMEPAGE,
+    packages=packages,
+    test_suite='test',
+    install_requires=install_req,
+    include_package_data=True,
+    long_description=description_text,
+    classifiers=CLASSIFIERS,
+    license="BSD",
+    entry_points={'console_scripts': ['odmltordf=odml.scripts.odml_to_rdf:main',
+                                      'odmlconversion=odml.scripts.odml_conversion:main']}
+)

@@ -200,7 +200,7 @@ event_colors = {
 
 electrode_cmap = plt.get_cmap('bone')
 electrode_colors = [electrode_cmap(x) for x in
-                    np.tile(np.array([0.3, 0.7]), len(chosen_els[monkey]) / 2)]
+                    np.tile(np.array([0.3, 0.7]), int(len(chosen_els[monkey]) / 2))]
 
 time_unit = 'ms'
 lfp_unit = 'uV'
